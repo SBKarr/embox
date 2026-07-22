@@ -3,7 +3,7 @@ package third_party
 @AutoCmd
 @Cmd(name="canopen_blank",help="")
 @Build(script="$(EXTERNAL_MAKE)")
-module canopen_node {   
+module canopen_node_blank {   
 	@IncludePath("$(EXTERNAL_BUILD_DIR)/third_party/canopen_node/install/include/example")
 	@IncludePath("$(EXTERNAL_BUILD_DIR)/third_party/canopen_node/install/include")
 	@AddPrefix("^BUILD/extbld/^MOD_PATH/install")
