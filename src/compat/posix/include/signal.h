@@ -132,6 +132,9 @@ union sigval {
 	void *sival_ptr; /* Pointer signal value. */
 };
 
+/* For compatibility with Linux */
+typedef union sigval sigval_t;
+
 typedef struct {
 	int si_signo;
 	int si_code;
