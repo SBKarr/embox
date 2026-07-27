@@ -93,7 +93,7 @@ static inline void niiet_pwm_tmr_en(struct niiet_pwm_priv *priv) {
 
     clk_enable((char *)priv->clk_name);
 
-    sys_ctrl_enable_tmr(1);
+    sys_ctrl_enable_tmr(priv->idx);
 }
 
 static inline void niiet_pwm_set_period_reg(struct niiet_tmr_regs *regs, int p) {

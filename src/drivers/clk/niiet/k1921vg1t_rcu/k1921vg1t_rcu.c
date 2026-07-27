@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <drivers/common/memory.h>
 
@@ -393,7 +394,8 @@ int clk_enable(char *clk_name) {
 		return 0;
 	}
 	if (0 == strncmp(clk_name, CLK_NAME_TMR, sizeof(CLK_NAME_TMR) - 1)) {
-		num = clk_name[sizeof(CLK_NAME_TMR) - 1] - '0';
+		//num = clk_name[sizeof(CLK_NAME_TMR) - 1] - '0';
+		num = atoi(&clk_name[sizeof(CLK_NAME_TMR) - 1]);
 		niiet_tmr_set_rcu(num);
 		return 0;
 	}

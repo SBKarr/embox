@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <hal/reg.h>
 
@@ -116,7 +117,9 @@ int sys_ctrl_enable_dev(const char *name) {
     int num;
 
     if (0 == strncmp(name, MOD_NAME_TMR, sizeof(MOD_NAME_TMR) - 1)) {
-        num = name[sizeof(MOD_NAME_TMR) - 1]  - '0';
+       //num = name[sizeof(MOD_NAME_TMR) - 1]  - '0';
+		num = atoi(&name[sizeof(MOD_NAME_TMR) - 1]);
+
         sys_ctrl_enable_tmr(num);
         return 0;
     }
