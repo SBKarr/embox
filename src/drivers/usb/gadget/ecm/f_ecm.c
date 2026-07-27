@@ -186,10 +186,10 @@ static int ecm_setup(struct usb_gadget_function *f,
 		switch (ctrl->b_request) {
 		case USB_REQ_SET_INTERFACE: {
 			/* alt setting in wValue, interface in wIndex */
-			uint16_t alt = ctrl->w_value;
-			uint16_t intf = ctrl->w_index;
+			//uint16_t alt = ctrl->w_value;
+			//uint16_t intf = ctrl->w_index;
 
-			log_debug("SET_INTERFACE intf=%u alt=%u", intf, alt);
+			log_debug("SET_INTERFACE intf=%u alt=%u", ctrl->w_index, ctrl->w_value);
 
 			req->len = 0;
 			usb_gadget_ep_queue(&gadget->composite->ep0, req);
