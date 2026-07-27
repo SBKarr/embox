@@ -97,8 +97,13 @@ static int stellaris_gpio_setup_mode(unsigned int port, gpio_mask_t pins, uint32
 	/* Enable port */
 	// clk_enable(clk_name);
 
+	if (mode & (GPIO_MODE_IN | GPIO_MODE_OUT)) {
+		gpio_regs->AFSEL &= ~pins;
+		gpio_regs->DEN |= pins;
+	}
+
 	if (mode & GPIO_MODE_IN) {
-		gpio_regs->DDR |= pins;
+		gpio_regs->DDR &= ~pins;
 	}
 
 	if (mode & GPIO_MODE_OUT) {
@@ -110,14 +115,8 @@ static int stellaris_gpio_setup_mode(unsigned int port, gpio_mask_t pins, uint32
 	}
 
 	if (mode & GPIO_MODE_ALT_SECTION) {
-		for (int i = 0; i < GPIO_PINS_NUMBER; i++) {
-			if (pins & (1 << i)) {
-				/* Enable ALTFUNC */
-				// uint32_t alt = GPIO_MODE_ALT_GET(mode);
-				// bmcu_cru_pin_altfunc_set(port, i, alt);
-
-			}
-		}
+		gpio_regs->AFSEL |= pins;
+		gpio_regs->DEN |= pins;
 	}
 
 	return 0;
