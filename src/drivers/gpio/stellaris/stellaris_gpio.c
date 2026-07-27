@@ -16,16 +16,38 @@
 #include <config/board_config.h>
 
 #define GPIO_CHIP_ID     OPTION_GET(NUMBER, gpio_chip_id)
-#define GPIO_PINS_NUMBER 16
+#define GPIO_PINS_NUMBER 8
 
 #define GPIOA ((volatile struct gpio_regs *)CONF_GPIO_PORT_A_REGION_BASE)
 #define GPIOB ((volatile struct gpio_regs *)CONF_GPIO_PORT_B_REGION_BASE)
 #define GPIOC ((volatile struct gpio_regs *)CONF_GPIO_PORT_C_REGION_BASE)
+#define GPIOD ((volatile struct gpio_regs *)CONF_GPIO_PORT_D_REGION_BASE)
 
+// Clocking not implemented
 
 struct gpio_regs {
-    volatile uint32_t DR;               /*!< Data                                   Address offset: 0x00 */
-    volatile uint32_t DDR;              /*!< Direction                              Address offset: 0x04 */
+    volatile uint32_t DR;             	/*!< Data                                   Address offset: 0x000 */
+	uint32_t RESERVED0[255];			/*!< Reserved                               Address offset: 0x004 */
+    volatile uint32_t DDR;            	/*!< Direction                              Address offset: 0x400 */
+	volatile uint32_t IS;             	/*!< Interrupt sense                        Address offset: 0x404 */
+    volatile uint32_t IBE;            	/*!< Interrupt both edges                   Address offset: 0x408 */
+    volatile uint32_t IEV;            	/*!< Interrupt event                        Address offset: 0x40C */
+    volatile uint32_t IM;             	/*!< Interrupt mask                         Address offset: 0x410 */
+    volatile uint32_t RIS;            	/*!< Raw interrupt status                   Address offset: 0x414 */
+    volatile uint32_t MIS;            	/*!< Masked interrupt status                Address offset: 0x418 */
+    volatile uint32_t ICR;            	/*!< Interrupt clear                        Address offset: 0x41C */
+    volatile uint32_t AFSEL;          	/*!< Alternate function select              Address offset: 0x420 */
+    uint32_t RESERVED1[55];				/*!< Reserved                               Address offset: 0x424 */
+    volatile uint32_t DR2R;           	/*!< 2mA drive select                       Address offset: 0x500 */
+    volatile uint32_t DR4R;           	/*!< 4mA drive select                       Address offset: 0x504 */
+    volatile uint32_t DR8R;           	/*!< 8mA drive select                       Address offset: 0x508 */
+    volatile uint32_t ODR;            	/*!< Open drain select                      Address offset: 0x50C */
+    volatile uint32_t PUR;            	/*!< Pull-up select                         Address offset: 0x510 */
+    volatile uint32_t PDR;            	/*!< Pull-down select                       Address offset: 0x514 */
+    volatile uint32_t SLR;            	/*!< Slew rate control                      Address offset: 0x518 */
+    volatile uint32_t DEN;            	/*!< Digital enable                         Address offset: 0x51C */
+    volatile uint32_t LOCK;           	/*!< Lock                                   Address offset: 0x520 */
+    volatile uint32_t CR;             	/*!< Commit                                 Address offset: 0x524 */
 };
 
 static const struct gpio_chip stellaris_gpio_chip;
