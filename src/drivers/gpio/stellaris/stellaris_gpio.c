@@ -61,6 +61,9 @@ static inline volatile struct gpio_regs *stellaris_gpio_get_gpio_port(int port) 
 	case 2:
 		return GPIOC;
 		break;
+	case 3:
+		return GPIOD;
+		break;
 	default:
 		return NULL;
 	}
