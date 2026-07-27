@@ -13,10 +13,8 @@
 #include <unistd.h>
 
 #include <drivers/can_dev.h>
-
 #include <embox/unit.h>
 #include <framework/mod/options.h>
-
 #include <hal/reg.h>
 #include <kernel/irq.h>
 #include <util/field.h>
@@ -24,7 +22,6 @@
 #include <config/board_config.h>
 
 #include "niiet_can.h"
-
 
 EMBOX_UNIT_INIT(niiet_can_init);
 
@@ -39,7 +36,7 @@ EMBOX_UNIT_INIT(niiet_can_init);
 #define CAN_REG_CLEAR(reg, mask) REG32_CLEAR(CAN_BASE_ADDR + reg, mask)
 
 static inline void niiet_can_mo_move_to_list(struct niiet_can_regs *regs,
-    							int idx, int list) {
+    int idx, int list) {
 	regs->PANCTR = (CAN_PANCTR_PANCMD_STAT_INC << CAN_PANCTR_PANCMD_Pos)
 	               | (idx << CAN_PANCTR_PANAR1_Pos)
 	               | (list << CAN_PANCTR_PANAR2_Pos);
@@ -53,7 +50,7 @@ static inline int niiet_can_get_free_mo(struct niiet_can_dev_priv *priv, int nod
 
 	node_desc = &priv->node_desc[node];
 	for (i = 0; i < NIIET_MO_TX_MAX; i++) {
-		if (0 != (node_desc->tx_mo_array[i].flags & NIIET_MO_DESC_USED)) {
+		if (!(node_desc->tx_mo_array[i].flags & NIIET_MO_DESC_USED)) {
 			return node_desc->tx_mo_array[i].num;
 		}
 	}
@@ -62,7 +59,7 @@ static inline int niiet_can_get_free_mo(struct niiet_can_dev_priv *priv, int nod
 }
 
 static inline void niiet_can_mo_conf_tx(struct niiet_canmsg_regs *canmsg_regs,
-    			int obj_num, struct can_frame *frame) {
+    int obj_num, struct can_frame *frame) {
 	uint32_t flags = 0;
 
 	if (frame->can_id & CAN_RTR_FLAG) {
@@ -79,9 +76,9 @@ static inline void niiet_can_mo_conf_tx(struct niiet_canmsg_regs *canmsg_regs,
 	if (frame->can_id & CAN_EFF_FLAG) {
 		flags = CANMSG_MOAR_ID_EFF(frame->can_id & CAN_EFF_MASK);
 		flags |= CANMSG_MOAR_IDE;
-	} else {
+	}
+	else {
 		flags = CANMSG_MOAR_ID_SFF(frame->can_id & CAN_SFF_MASK);
-
 	}
 	flags |= CANMSG_MOAR_PRI(0x2); /* by identifier + IDE + DIR */
 	canmsg_regs->Msg[obj_num].MOAR = flags;
@@ -89,22 +86,21 @@ static inline void niiet_can_mo_conf_tx(struct niiet_canmsg_regs *canmsg_regs,
 	/* for FIFO canmsg_regs->Msg[obj_num].MOFGPR */
 	/* with IRQ canmsg_regs->Msg[obj_num].MOIPR */
 
-	flags  = frame->data[0];
+	flags = frame->data[0];
 	flags |= frame->data[1] << 8;
 	flags |= frame->data[2] << 16;
 	flags |= frame->data[3] << 24;
 	canmsg_regs->Msg[obj_num].MODATAL = flags;
 
-	flags  = frame->data[4];
+	flags = frame->data[4];
 	flags |= frame->data[5] << 8;
 	flags |= frame->data[6] << 16;
 	flags |= frame->data[7] << 24;
 	canmsg_regs->Msg[obj_num].MODATAH = flags;
-
 }
 
 static inline void niiet_can_mo_conf_rx(struct niiet_canmsg_regs *canmsg_regs,
-					int obj_num, struct can_frame *frame) {
+    int obj_num, struct can_frame *frame) {
 	uint32_t flags = 0;
 
 	if (frame->can_id & CAN_RTR_FLAG) {
@@ -119,9 +115,8 @@ static inline void niiet_can_mo_conf_rx(struct niiet_canmsg_regs *canmsg_regs,
 	/* canmsg_regs->Msg[obj_num].MOAMR */
 }
 
-
 static void niiet_can_mo_send(struct niiet_canmsg_regs *canmsg_regs, int obj_num) {
-    canmsg_regs->Msg[obj_num].MOCTR = CANMSG_MOCTR_SETTXRQ | CANMSG_MOCTR_SETMSGVAL;
+	canmsg_regs->Msg[obj_num].MOCTR = CANMSG_MOCTR_SETTXRQ | CANMSG_MOCTR_SETMSGVAL;
 }
 
 #if 0
@@ -136,7 +131,7 @@ static void niiet_can_config(struct can_dev *can) {
 
 	CAN_REG_STORE(CAN_CLC, 0);
 
-	while (CAN_REG_LOAD(CAN_CLC) & CAN_CLC_DISS) {}	
+	while (CAN_REG_LOAD(CAN_CLC) & CAN_CLC_DISS) {}
 
 	reg = CAN_REG_LOAD(CAN_FDR);
 	reg = FIELD_SET(reg, CAN_FDR_STEP, 0x3ff);
@@ -158,7 +153,7 @@ static inline int niiet_can_node_init(struct can_dev *can, int node_num) {
 
 	node->NCR = CAN_NODE_NCR_CCE | CAN_NODE_NCR_INIT;
 	/* write regs NBTRx & NPCRx */
-	node->NBTR = 2305;/* Tbit = 1 / (1 Мбит/с) */
+	node->NBTR = 0x2305; /* Tbit = 1 / (1 Мбит/с) */
 
 	node->NIPR = (1 << CAN_NODE_NIPR_TRINP_Pos);
 
@@ -174,14 +169,14 @@ static inline int niiet_can_node_init(struct can_dev *can, int node_num) {
 	for (i = 0; i < (NIIET_MO_RX_MAX); i++) {
 		mo_desc = &node_desc->rx_mo_array[i];
 		mo_desc->flags = NIIET_MO_DESC_INITED;
-		mo_desc->num   = i; 
+		mo_desc->num = i;
 		niiet_can_mo_move_to_list(regs, i, CAN_NODE_LIST_ID(0));
 	}
 
-	for (i = 0; i < (NIIET_MO_RX_MAX + NIIET_MO_TX_MAX) ; i++) {
+	for (i = 0; i < (NIIET_MO_RX_MAX + NIIET_MO_TX_MAX); i++) {
 		mo_desc = &node_desc->tx_mo_array[i];
 		mo_desc->flags = NIIET_MO_DESC_INITED;
-		mo_desc->num   = i; 
+		mo_desc->num = i;
 		niiet_can_mo_move_to_list(regs, i, CAN_NODE_LIST_ID(0));
 	}
 
@@ -225,7 +220,7 @@ static int niiet_can_send(struct can_dev *can, const void *data) {
 	niiet_can_mo_send(priv->canmsg_regs, mo_idx);
 
 	return 0;
-}	
+}
 
 static const struct can_dev_ops niiet_can_ops = {
     .cdo_config = niiet_can_config,
@@ -267,21 +262,21 @@ static int niiet_can_init(void) {
 	niiet_can_dev_priv.can_dev = &niiet_can_dev;
 	niiet_can_dev_priv.regs = (struct niiet_can_regs *)(uintptr_t)CAN_BASE_ADDR;
 
-#if defined (CONF_CAN_IRQ_NODE0)
+#if defined(CONF_CAN_IRQ_NODE0)
 	res = irq_attach(CONF_CAN_IRQ_NODE0, niiet_can_irq_handler, 0,
-						(void *)&niiet_can_dev, "can_node0");
+	    (void *)&niiet_can_dev, "can_node0");
 	if (res < 0) {
 		return res;
 	}
 #endif /* defined (CONF_CAN_IRQ_NODE0) */
 
-#if defined (CONF_CAN_IRQ_NODE1)
+#if defined(CONF_CAN_IRQ_NODE1)
 	res = irq_attach(CONF_CAN_IRQ_NODE1, niiet_can_irq_handler, 0,
-						(void *)&niiet_can_dev, "can_node0");
+	    (void *)&niiet_can_dev, "can_node1");
 	if (res < 0) {
 		return res;
 	}
-#endif /* defined (CONF_CAN_IRQ_NODE0) */
+#endif /* defined (CONF_CAN_IRQ_NODE1) */
 
 	niiet_can_bconf_init(&niiet_can_dev_priv);
 
