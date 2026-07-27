@@ -36,6 +36,9 @@ static uint8_t ssd0323_fb[SSD0323_DISPLAY_WIDTH * SSD0323_DISPLAY_HEIGHT / 2]
 
 static int ssd0323_get_var(struct fb_info *info,
 		struct fb_var_screeninfo *var) {
+    var->xres = SSD0323_DISPLAY_WIDTH;
+    var->yres = SSD0323_DISPLAY_HEIGHT;
+    var->bits_per_pixel = 4;
 
 	return 0;
 }
