@@ -130,11 +130,12 @@ static void stellaris_gpio_set(unsigned int port, gpio_mask_t pins, int level) {
 		return;
 	}
 
+	volatile uint32_t *data_reg = (volatile uint32_t *)((uintptr_t)gpio_regs + (pins << 2));
+
 	if (level) {
-		gpio_regs->DR |= pins;
-	}
-	else {
-		gpio_regs->DR &= ~pins;
+		*data_reg = pins;
+	} else {
+		*data_reg  = 0;
 	}
 }
 
@@ -143,10 +144,12 @@ static gpio_mask_t stellaris_gpio_get(unsigned int port, gpio_mask_t pins) {
 
 	gpio_regs = stellaris_gpio_get_gpio_port(port);
 	if (gpio_regs == NULL) {
-		return -1;
+		return 0;
 	}
 
-	return gpio_regs->DR & pins;
+	volatile uint32_t *data_reg = (volatile uint32_t *)((uintptr_t)gpio_regs + (pins << 2));
+
+	return *data_reg;
 }
 
 static const struct gpio_chip stellaris_gpio_chip = {
