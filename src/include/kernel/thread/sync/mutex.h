@@ -55,7 +55,25 @@ struct timespec;
 		/* lock_couunt */ 0 \
 	}
 
-#define MUTEX_INIT(m)  {.wq=WAITQ_INIT(m.wq), .holder=NULL, .lock_count=0}
+#define MUTEX_INIT(m)                \
+	{                                \
+	    .wq = WAITQ_INIT(m.wq),      \
+	    .holder = NULL,              \
+	    .lock_count = 0,             \
+	    .attr = {                    \
+	        .type = MUTEX_DEFAULT,   \
+	    },                           \
+	}
+
+#define RMUTEX_INIT(m)               \
+	{                                \
+	    .wq = WAITQ_INIT(m.wq),      \
+	    .holder = NULL,              \
+	    .lock_count = 0,             \
+	    .attr = {                    \
+	        .type = MUTEX_RECURSIVE, \
+	    },                           \
+	}
 
 __BEGIN_DECLS
 

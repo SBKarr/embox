@@ -1,0 +1,11 @@
+package project.canfestival
+
+@BuildArtifactPath(cppflags="-I$(EXTERNAL_BUILD_DIR)/project/canfestival/libcanfestival/install/include")
+@Build(stage=1, script="$(EXTERNAL_MAKE) configure build install")
+static module libcanfestival {   
+	@AddPrefix("^BUILD/extbld/^MOD_PATH/install")
+	source "libcanfestival.a", "libcanfestival_embox.a", "libcanfestival_can_embox.a"
+
+	@NoRuntime depends embox.kernel.timer.sys_timer
+	@NoRuntime depends embox.kernel.thread.mutex
+}

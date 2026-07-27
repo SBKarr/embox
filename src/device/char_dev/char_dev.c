@@ -66,7 +66,9 @@ struct char_dev *char_dev_iterate(struct char_dev *cdev) {
 struct char_dev *char_dev_find(const char *name) {
 	struct char_dev *cdev;
 
-	assert(name);
+	if (!name) {
+		return NULL;
+	}
 
 	char_dev_foreach(cdev) {
 		if (!strcmp(name, cdev->name)) {
