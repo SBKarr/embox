@@ -35,6 +35,13 @@ EMBOX_UNIT_INIT(ssd0323_init);
 
 static struct spi_device *ssd0323_spi_dev;
 
+static void send_data(uint8_t *data, int len) {
+	gpio_set(SSD0323_DC_PORT, 1 << SSD0323_DC_PIN, 1);
+	gpio_set(SSD0323_CS_PORT, 1 << SSD0323_CS_PIN, SPI_CS_INACTIVE);
+	spi_transfer(ssd0323_spi_dev, data, NULL, len);
+	gpio_set(SSD0323_CS_PORT, 1 << SSD0323_CS_PIN, SPI_CS_ACTIVE);
+}
+
 static int ssd0323_set_var(struct fb_info *info,
 		struct fb_var_screeninfo const *var) {
 	return 0;
