@@ -60,9 +60,32 @@ static int ssd0323_get_var(struct fb_info *info,
 	return 0;
 }
 
+static void ssd0323_fillrect(struct fb_info *info, const struct fb_fillrect *rect) {
+	uint32_t x, y;
+	uint8_t pixel;
+
+	pixel = (uint8_t)(rect->color & 0x0F);
+
+	for (y = rect->dy; y < rect->dy + rect->height && y < SSD0323_DISPLAY_HEIGHT; y++) {
+		for (x = rect->dx; x < rect->dx + rect->width && x < SSD0323_DISPLAY_WIDTH; x++) {
+			int byte_idx = (y * SSD0323_DISPLAY_WIDTH + x) / 2;
+
+			if (x % 2 == 0) {
+				ssd0323_fb[byte_idx] = (ssd0323_fb[byte_idx] & 0x0F) | (pixel << 4);
+			}
+			else {
+				ssd0323_fb[byte_idx] = (ssd0323_fb[byte_idx] & 0xF0) | pixel;
+			}
+		}
+	}
+
+	send_data(ssd0323_fb, sizeof(ssd0323_fb));
+}
+
 static const struct fb_ops ssd0323_ops = {
 	.fb_set_var   = ssd0323_set_var,
 	.fb_get_var   = ssd0323_get_var,
+	.fb_fillrect  = ssd0323_fillrect,
 };
 
 static int ssd0323_init(void) {
