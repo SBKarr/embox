@@ -260,7 +260,9 @@ get_user_undef_guess AUTOQEMU_MACHINE guess_machine
 
 guess_cpuhartnum() {
 	cpu_num=$(cat "$MODS_CONF" | gcc -P -E - | sed -n 's/.*embox\.arch\.[^\.]*\.kernel\.cpu([^)]*cpu_count=\([0-9]\+\)).*/\1/p')
-	echo "${cpu_num:-1}"
+	if [ -n "$cpu_num" ]; then
+		echo "-smp $cpu_num"
+	fi
 }
 get_user_undef_guess AUTOQEMU_CPUHARTNUM guess_cpuhartnum
 
@@ -509,7 +511,7 @@ if [ "$AUTOQEMU_DISABLE_SUDO" == "y" ]; then
 	runas=""
 fi
 
-ARG_LINE="$sudo $QEMU $runas $AUTOQEMU_MACHINE $AUTOQEMU_LOAD_ARG $AUTOQEMU_KVM_ARG -m $AUTOQEMU_MEM -smp $AUTOQEMU_CPUHARTNUM $usb_lines $nic_lines $can_lines $sound_lines $graphic_lines $@"
+ARG_LINE="$sudo $QEMU $runas $AUTOQEMU_MACHINE $AUTOQEMU_LOAD_ARG $AUTOQEMU_KVM_ARG -m $AUTOQEMU_MEM $AUTOQEMU_CPUHARTNUM $usb_lines $nic_lines $can_lines $sound_lines $graphic_lines $@"
 
 info "\n"$ARG_LINE
 $ARG_LINE
