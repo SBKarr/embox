@@ -41,10 +41,10 @@ static inline void waitq_init(struct waitq *wq) {
 
 extern void waitq_link_init(struct waitq_link *wql);
 
-extern void __waitq_wait_prepare(struct waitq *, struct waitq_link *);
+extern void waitq_add(struct waitq *, struct waitq_link *);
 extern void waitq_wait_prepare(struct waitq *, struct waitq_link *);
 
-extern void __waitq_wait_cleanup(struct waitq *, struct waitq_link *);
+extern void waitq_del(struct waitq *, struct waitq_link *);
 extern void waitq_wait_cleanup(struct waitq *, struct waitq_link *);
 
 extern void waitq_wakeup(struct waitq *, int nr);

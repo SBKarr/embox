@@ -36,9 +36,9 @@
 			waitq_link_init(wql); \
 		} \
 		if (cond_expr) { \
-			__waitq_wait_cleanup(wq, wql); \
+			waitq_del(wq, wql); \
 		} else { \
-			__waitq_wait_prepare(wq, wql); \
+			waitq_add(wq, wql); \
 			ret = -EAGAIN; \
 		} \
 		ret; \
