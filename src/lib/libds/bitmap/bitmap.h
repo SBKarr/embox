@@ -8,15 +8,14 @@
 #ifndef LIB_LIBDS_BITMAP_H_
 #define LIB_LIBDS_BITMAP_H_
 
-#include <limits.h> /* LONG_BIT */
 #include <stdbool.h>
 #include <string.h> /* memset */
 
 #define BITMAP_DECL(name, nbits) unsigned long name[BITMAP_SIZE(nbits)]
 
-#define BITMAP_SIZE(nbits)       (((nbits) + LONG_BIT - 1) / LONG_BIT)
-#define BITMAP_OFFSET(bit)       ((bit) / LONG_BIT)
-#define BITMAP_SHIFT(bit)        ((bit) % LONG_BIT)
+#define BITMAP_SIZE(nbits)       (((nbits) + (__SIZEOF_LONG__ * 8) - 1) / (__SIZEOF_LONG__ * 8))
+#define BITMAP_OFFSET(bit)       ((bit) / (__SIZEOF_LONG__ * 8))
+#define BITMAP_SHIFT(bit)        ((bit) % (__SIZEOF_LONG__ * 8))
 #define BITMAP_MASK(bit)         (0x1ul << BITMAP_SHIFT(bit))
 
 extern unsigned int __bitmap_find_bit(const unsigned long *bitmap,
