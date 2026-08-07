@@ -1,0 +1,166 @@
+diff --color -aur gcc-releases-gcc-16.1.0/gcc/c/Make-lang.in ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/c/Make-lang.in
+--- gcc-releases-gcc-16.1.0/gcc/c/Make-lang.in	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/c/Make-lang.in	2026-08-07 02:46:36.867250994 +0200
+@@ -74,14 +74,6 @@
+ # the bootstrap comparison and allows comparing of the cc1 binary
+ cc1-checksum.cc : build/genchecksum$(build_exeext) checksum-options \
+ 	$(C_OBJS) $(BACKEND) $(LIBDEPS) 
+-	if [ -f ../stage_final ] \
+-	   && cmp -s ../stage_current ../stage_final; then \
+-	  cp ../prev-gcc/cc1-checksum.cc cc1-checksum.cc; \
+-	else \
+-	  build/genchecksum$(build_exeext) $(C_OBJS) $(BACKEND) $(LIBDEPS) \
+-                     checksum-options > cc1-checksum.cc.tmp && 		 \
+-	  $(srcdir)/../move-if-change cc1-checksum.cc.tmp cc1-checksum.cc; \
+-	fi
+ 
+ cc1$(exeext): $(C_OBJS) cc1-checksum.o $(BACKEND) $(LIBDEPS)
+ 	@$(call LINK_PROGRESS,$(INDEX.c),start)
+diff --color -aur gcc-releases-gcc-16.1.0/gcc/cp/Make-lang.in ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/cp/Make-lang.in
+--- gcc-releases-gcc-16.1.0/gcc/cp/Make-lang.in	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/cp/Make-lang.in	2026-08-07 02:46:36.867582121 +0200
+@@ -133,14 +133,6 @@
+ # the bootstrap comparison and allows comparing of the cc1 binary
+ cc1plus-checksum.cc : build/genchecksum$(build_exeext) checksum-options \
+ 	$(CXX_OBJS) $(BACKEND) $(CODYLIB) $(LIBDEPS) 
+-	if [ -f ../stage_final ] \
+-	   && cmp -s ../stage_current ../stage_final; then \
+-	   cp ../prev-gcc/cc1plus-checksum.cc cc1plus-checksum.cc; \
+-	else \
+-	  build/genchecksum$(build_exeext) $(CXX_OBJS) $(BACKEND) $(CODYLIB) $(LIBDEPS) \
+-                     checksum-options > cc1plus-checksum.cc.tmp &&	   \
+-	  $(srcdir)/../move-if-change cc1plus-checksum.cc.tmp cc1plus-checksum.cc; \
+-	fi
+ 
+ cc1plus$(exeext): $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(CODYLIB) $(LIBDEPS) $(c++.prev)
+ 	@$(call LINK_PROGRESS,$(INDEX.c++),start)
+diff --color -aur gcc-releases-gcc-16.1.0/gcc/Makefile.in ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/Makefile.in
+--- gcc-releases-gcc-16.1.0/gcc/Makefile.in	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/gcc/Makefile.in	2026-08-07 02:46:36.868014522 +0200
+@@ -467,19 +467,7 @@
+ 
+ # Header files that are made available under the same name
+ # to programs compiled with GCC.
+-USER_H = $(srcdir)/ginclude/float.h \
+-	 $(srcdir)/ginclude/iso646.h \
+-	 $(srcdir)/ginclude/stdarg.h \
+-	 $(srcdir)/ginclude/stdbool.h \
+-	 $(srcdir)/ginclude/stddef.h \
+-	 $(srcdir)/ginclude/varargs.h \
+-	 $(srcdir)/ginclude/stdfix.h \
+-	 $(srcdir)/ginclude/stdnoreturn.h \
+-	 $(srcdir)/ginclude/stdalign.h \
+-	 $(srcdir)/ginclude/stdatomic.h \
+-	 $(srcdir)/ginclude/stdckdint.h \
+-	 $(srcdir)/ginclude/stdcountof.h \
+-	 $(EXTRA_HEADERS)
++USER_H = $(EXTRA_HEADERS)
+ 
+ USER_H_INC_NEXT_PRE = @user_headers_inc_next_pre@
+ USER_H_INC_NEXT_POST = @user_headers_inc_next_post@
+diff --color -aur gcc-releases-gcc-16.1.0/libgcc/configure ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libgcc/configure
+--- gcc-releases-gcc-16.1.0/libgcc/configure	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libgcc/configure	2026-08-07 02:46:36.868977103 +0200
+@@ -5101,8 +5101,11 @@
+ # Set variable name (not prefixed enough to be a good cache variable
+ # name) traditionally used for this purpose, to avoid having to change
+ # a bunch of configure scripts.
+-target_thread_file="$gcc_cv_target_thread_file"
++#target_thread_file="$gcc_cv_target_thread_file"
+ 
++# In Embox we provide posix even if gcc built with single thread model
++# Among other solutions is to use Linux gcc, or our own gcc.
++target_thread_file=posix
+ 
+ # Check for assembler CFI support.
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether assembler supports CFI directives" >&5
+diff --color -aur gcc-releases-gcc-16.1.0/libstdc++-v3/configure ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/configure
+--- gcc-releases-gcc-16.1.0/libstdc++-v3/configure	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/configure	2026-08-07 02:59:17.409549488 +0200
+@@ -16374,7 +16374,9 @@
+ # Set variable name (not prefixed enough to be a good cache variable
+ # name) traditionally used for this purpose, to avoid having to change
+ # a bunch of configure scripts.
+-target_thread_file="$gcc_cv_target_thread_file"
++# In Embox we provide posix even if gcc built with single thread model
++# Among other solutions is to use Linux gcc, or our own gcc.
++target_thread_file=posix
+ 
+ 
+ 
+@@ -50959,7 +50961,6 @@
+ 
+     ;;
+   *)
+-    as_fn_error $? "No support for this host/target combination." "$LINENO" 5
+    ;;
+ esac
+ 
+@@ -52457,7 +52458,9 @@
+   ac_save_CXXFLAGS="$CXXFLAGS"
+   CXXFLAGS="$CXXFLAGS -fno-exceptions \
+ 	-I${toplevel_srcdir}/libgcc -I${toplevel_builddir}/libgcc"
+-
++  # In Embox we provide posix even if gcc built with single thread model
++  # Among other solutions is to use Linux gcc, or our own gcc.
++  target_thread_file=posix
+   case $target_thread_file in
+     posix)
+       CXXFLAGS="$CXXFLAGS -DSUPPORTS_WEAK -DGTHREAD_USE_WEAK -D_PTHREADS"
+@@ -56363,11 +56366,6 @@
+       glibcxx_toolexecdir='${libdir}/gcc/${host_alias}'
+       glibcxx_toolexeclibdir='${libdir}'
+     fi
+-    multi_os_directory=`$CXX -print-multi-os-directory`
+-    case $multi_os_directory in
+-      .) ;; # Avoid trailing /.
+-      *) glibcxx_toolexeclibdir=$glibcxx_toolexeclibdir/$multi_os_directory ;;
+-    esac
+   fi
+ 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for install location" >&5
+diff --color -aur gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.am ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.am
+--- gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.am	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.am	2026-08-07 02:46:36.874871881 +0200
+@@ -127,8 +127,6 @@
+ 	list_associated-2.cc \
+ 	locale.cc \
+ 	locale_facets.cc \
+-	math_stubs_float.cc \
+-	math_stubs_long_double.cc \
+ 	stdexcept.cc \
+ 	strstream.cc \
+ 	tree.cc \
+diff --color -aur gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.in ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.in
+--- gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.in	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/libstdc++-v3/src/c++98/Makefile.in	2026-08-07 02:46:36.875033219 +0200
+@@ -141,7 +141,7 @@
+ 	hashtable_tr1.lo ios_failure.lo ios_init.lo ios_locale.lo \
+ 	list.lo list-aux.lo list-aux-2.lo list_associated.lo \
+ 	list_associated-2.lo locale.lo locale_facets.lo \
+-	math_stubs_float.lo math_stubs_long_double.lo stdexcept.lo \
++	stdexcept.lo \
+ 	strstream.lo tree.lo istream.lo istream-string.lo streambuf.lo \
+ 	valarray.lo $(am__objects_1) $(am__objects_3) $(am__objects_4) \
+ 	$(am__objects_5) $(am__objects_6)
+@@ -508,8 +508,6 @@
+ 	list_associated-2.cc \
+ 	locale.cc \
+ 	locale_facets.cc \
+-	math_stubs_float.cc \
+-	math_stubs_long_double.cc \
+ 	stdexcept.cc \
+ 	strstream.cc \
+ 	tree.cc \
+diff --color -aur gcc-releases-gcc-16.1.0/zlib/Makefile.in ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/zlib/Makefile.in
+--- gcc-releases-gcc-16.1.0/zlib/Makefile.in	2026-04-30 10:34:22.000000000 +0200
++++ ../build/extbld/third_party/gcc/gcc_build/gcc-releases-gcc-16.1.0/zlib/Makefile.in	2026-08-07 02:46:36.875242819 +0200
+@@ -457,7 +457,7 @@
+ MULTISUBDIR = 
+ MULTIDO = true
+ MULTICLEAN = true
+-all: all-am
++all:
+ 
+ .SUFFIXES:
+ .SUFFIXES: .c .lo .o .obj
