@@ -22,7 +22,9 @@ ifeq (1,$(call option_get,BOOLEAN,force_gcc_version))
 GCC_VERSION := $(call option_get,STRING,gcc_version)
 else
 GNUC_MAJOR := $(call macro_get,__GNUC__)
-ifeq ($(GNUC_MAJOR),$(filter $(GNUC_MAJOR),15 14))
+ifeq ($(GNUC_MAJOR),$(filter $(GNUC_MAJOR),16))
+GCC_VERSION := 16.1.0
+else ifeq ($(GNUC_MAJOR),$(filter $(GNUC_MAJOR),15 14))
 GCC_VERSION := 14.3.0
 else ifeq ($(GNUC_MAJOR),$(filter $(GNUC_MAJOR),13))
 GCC_VERSION := 13.3.0
@@ -47,6 +49,7 @@ PKG_MD5_8.3.0  := 700467b46a64b8fbc89ebc3897922b8b
 PKG_MD5_9.3.0  := 62b4b034face742cf6679f2337f63423
 PKG_MD5_13.3.0 := ea39b36bf3553526ace8d22847dc6ba1
 PKG_MD5_14.3.0 := 619f8a3f4c4f0d1e424590b426e01111
+PKG_MD5_16.1.0 := 2f19fd829ff1a249428c4bf351066897
 PKG_MD5        := $(PKG_MD5_$(PKG_VER))
 
 ifeq (arm,$(EMBOX_ARCH))
