@@ -23,6 +23,7 @@ int idesc_init(struct idesc *idesc, const struct idesc_ops *ops, mode_t amode) {
 
 	idesc->idesc_ops = ops;
 	idesc->idesc_xattrops = NULL;
+	idesc->idesc_dev_waitq = NULL;
 
 	waitq_init(&idesc->idesc_waitq);
 
@@ -60,8 +61,7 @@ static int idesc_xattr_check(struct idesc *idesc) {
 	return 0;
 }
 
-int idesc_getxattr(struct idesc *idesc, const char *name, void *value,
-    size_t size) {
+int idesc_getxattr(struct idesc *idesc, const char *name, void *value, size_t size) {
 	int res;
 
 	res = idesc_xattr_check(idesc);

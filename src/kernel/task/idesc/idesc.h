@@ -20,6 +20,7 @@ struct idesc_xattrops;
 
 struct idesc {
 	struct waitq idesc_waitq;
+	struct waitq *idesc_dev_waitq;
 	const struct idesc_ops *idesc_ops;
 	const struct idesc_xattrops *idesc_xattrops;
 	unsigned int idesc_flags;
@@ -67,6 +68,10 @@ extern int idesc_listxattr(struct idesc *idesc, char *list, size_t size);
 extern int idesc_removexattr(struct idesc *idesc, const char *name);
 
 extern int idesc_close(struct idesc *idesc, int fd);
+
+static inline void idesc_set_dev_waitq(struct idesc *idesc, struct waitq *waitq) {
+	idesc->idesc_dev_waitq = waitq;
+}
 
 __END_DECLS
 
