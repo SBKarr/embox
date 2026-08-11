@@ -115,7 +115,7 @@ static ssize_t fbcon_idesc_read(struct idesc *idesc, const struct iovec *iov, in
 	assert(cnt == 1);
 	nbyte = iov->iov_len;
 
-	return tty_read(&fbcon->vterm.tty, buf, nbyte);
+	return tty_read(&fbcon->vterm.tty, buf, nbyte, idesc->idesc_flags);
 }
 
 static ssize_t fbcon_idesc_write(struct idesc *idesc, const struct iovec *iov, int cnt) {
@@ -175,7 +175,6 @@ static void *run(void *data) {
 
 	idesc_init(&fbcon->idesc, &fbcon_idesc_ops, O_RDWR);
 	fd = index_descriptor_add(&fbcon->idesc);
-	fbcon->vterm.tty.idesc = &fbcon->idesc;
 
 	assert(fd == 0);
 

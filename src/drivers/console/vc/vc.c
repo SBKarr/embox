@@ -19,11 +19,10 @@
 static struct vterm vc_vterm;
 
 static void vc_close(struct char_dev *cdev) {
-	vc_vterm.tty.idesc = NULL;
 }
 
 static ssize_t vc_read(struct char_dev *cdev, void *buf, size_t nbyte, int flags) {
-	return tty_read(&vc_vterm.tty, (char *)buf, nbyte);
+	return tty_read(&vc_vterm.tty, (char *)buf, nbyte, flags);
 }
 
 static ssize_t vc_write(struct char_dev *cdev, const void *buf, size_t nbyte,
