@@ -16,6 +16,7 @@
 #include <drivers/tty.h>
 #include <drivers/ttys.h>
 #include <kernel/panic.h>
+#include <kernel/task/resource/idesc.h>
 #include <mem/misc/pool.h>
 #include <util/err.h>
 #include <util/log.h>
@@ -37,7 +38,7 @@ static ssize_t serial_read(struct char_dev *cdev, void *buf, size_t nbyte,
 	assert(uart);
 	assert(uart->tty);
 
-	return tty_read(uart->tty, buf, nbyte);
+	return tty_read(uart->tty, buf, nbyte, flags);
 }
 
 static ssize_t serial_write(struct char_dev *cdev, const void *buf,
@@ -58,7 +59,7 @@ static ssize_t serial_write(struct char_dev *cdev, const void *buf,
 	assert(uart->tty);
 
 	do {
-		written = tty_write(uart->tty, buf, left);
+		written = tty_write(uart->tty, buf, left, flags);
 
 		while (-1 != (ch = tty_out_getc(uart->tty))) {
 			uart_putc(uart, ch);
@@ -150,11 +151,12 @@ static int serial_open(struct char_dev *cdev, struct idesc *idesc) {
 	tty_init(&tty_dev->tty, uart_tty_get_ops());
 
 	uart->tty = &tty_dev->tty;
-	uart->tty->idesc = idesc;
 
 	if (uart->irq_handler == NULL) {
 		uart->irq_handler = uart_irq_handler;
 	}
+
+	idesc_set_dev_waitq(idesc, &tty_dev->tty.tty_waitq);
 
 	return uart_open(uart);
 }

@@ -235,6 +235,7 @@ struct idesc *char_dev_open_idesc(struct char_dev *cdev, int oflag) {
 	}
 
 	idesc_init(idesc, &char_dev_idesc_ops, oflag);
+	idesc_set_dev_waitq(idesc, &cdev->waitq);
 	((struct char_dev_idesc *)idesc)->cdev = cdev;
 
 	if (oflag & O_PATH) {

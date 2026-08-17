@@ -15,6 +15,7 @@
 #include <asm/termbits.h>
 #include <framework/mod/options.h>
 #include <kernel/irq_lock.h>
+#include <kernel/sched/waitq.h>
 #include <kernel/thread/sync/mutex.h>
 #include <lib/libds/ring.h>
 
@@ -29,9 +30,9 @@
 	OPTION_MODULE_GET(embox__driver__tty__tty, NUMBER, rx_buff_sz)
 
 struct tty_ops;
-struct idesc;
 struct tty {
-	struct idesc *idesc;
+	struct waitq tty_waitq;
+
 	const struct tty_ops *ops;
 
 	struct termios2 termios;
@@ -65,8 +66,8 @@ struct tty_ops {
 
 extern struct tty *tty_init(struct tty *, const struct tty_ops *);
 
-extern size_t tty_read(struct tty *, char *, size_t);
-extern size_t tty_write(struct tty *, const char *, size_t);
+extern size_t tty_read(struct tty *, char *, size_t, int);
+extern size_t tty_write(struct tty *, const char *, size_t, int);
 extern int tty_ioctl(struct tty *, int, void *);
 extern size_t tty_status(struct tty *t, int status_nr);
 

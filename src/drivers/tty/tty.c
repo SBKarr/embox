@@ -12,23 +12,20 @@
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/poll.h>
 #include <termios.h>
 
 #include <drivers/tty.h>
 #include <drivers/tty/termios_ops.h>
-#include <kernel/task/resource/idesc_event.h>
+#include <kernel/sched/waitq.h>
 #include <kernel/thread/thread_sched_wait.h>
 #include <util/math.h>
 #include <util/member.h>
 
 extern void tty_task_break_check(struct tty *t, char ch);
 
-static inline void tty_notify(struct tty *t, int mask) {
-	assert(t);
-
-	if (t->idesc) {
-		idesc_notify(t->idesc, mask);
-	}
+static void tty_notify(struct tty *t, int mask) {
+	waitq_wakeup(&t->tty_waitq, 0);
 }
 
 #define MUTEX_UNLOCKED_DO(expr, m) \
@@ -41,8 +38,7 @@ static inline void tty_out_wake(struct tty *t) {
 /* called from mutex locked context */
 static int tty_output(struct tty *t, char ch) {
 	// TODO locks? context? -- Eldar
-	int len = termios_putc(&t->termios, ch, &t->o_ring, t->o_buff,
-	    TTY_IO_BUFF_SZ);
+	int len = termios_putc(&t->termios, ch, &t->o_ring, t->o_buff, TTY_IO_BUFF_SZ);
 
 	if (len > 0) {
 		MUTEX_UNLOCKED_DO(tty_out_wake(t), &t->lock);
@@ -73,8 +69,8 @@ static void tty_rx_do(struct tty *t) {
 	}
 }
 
-size_t tty_read(struct tty *t, char *buff, size_t size) {
-	struct idesc_wait_link iwl;
+size_t tty_read(struct tty *t, char *buff, size_t size, int flags) {
+	struct waitq_link wql;
 	int rc;
 	char *curr, *next, *end;
 	unsigned long timeout;
@@ -89,14 +85,15 @@ size_t tty_read(struct tty *t, char *buff, size_t size) {
 		timeout = SCHED_TIMEOUT_INFINITE;
 	}
 
-	idesc_wait_init(&iwl, POLLIN | POLLERR);
+	waitq_link_init(&wql);
 
 	threadsig_lock();
 	mutex_lock(&t->lock);
 
 	do {
 		tty_rx_do(t);
-		rc = idesc_wait_prepare(t->idesc, &iwl);
+		waitq_wait_prepare(&t->tty_waitq, &wql);
+		rc = (flags & O_NONBLOCK) ? -EAGAIN : 0;
 
 		termios_i_buff_init(&b, &t->i_ring, t->i_buff, &t->i_canon_ring,
 		    TTY_IO_BUFF_SZ);
@@ -107,7 +104,7 @@ size_t tty_read(struct tty *t, char *buff, size_t size) {
 		curr = next;
 
 		if (size <= count) {
-			idesc_wait_cleanup(t->idesc, &iwl);
+			waitq_wait_cleanup(&t->tty_waitq, &wql);
 			rc = curr - buff;
 			break;
 		}
@@ -131,7 +128,7 @@ size_t tty_read(struct tty *t, char *buff, size_t size) {
 			mutex_lock(&t->lock);
 		}
 
-		idesc_wait_cleanup(t->idesc, &iwl);
+		waitq_wait_cleanup(&t->tty_waitq, &wql);
 	} while (!rc);
 
 	mutex_unlock(&t->lock);
@@ -140,22 +137,20 @@ size_t tty_read(struct tty *t, char *buff, size_t size) {
 	return rc;
 }
 
-static int tty_blockin_output(struct tty *t, char ch) {
-	struct idesc_wait_link iwl;
+static int tty_blockin_output(struct tty *t, char ch, int flags) {
+	struct waitq_link wql;
 	int ret;
 
-	idesc_wait_init(&iwl, POLLOUT | POLLERR);
+	waitq_link_init(&wql);
 
 	do {
 		if (tty_output(t, ch)) {
 			return 0;
 		}
 
-		if (!t->idesc) {
-			return -EBADF;
-		}
+		waitq_wait_prepare(&t->tty_waitq, &wql);
+		ret = (flags & O_NONBLOCK) ? -EAGAIN : 0;
 
-		ret = idesc_wait_prepare(t->idesc, &iwl);
 		if (!ret) {
 			mutex_unlock(&t->lock);
 
@@ -165,13 +160,13 @@ static int tty_blockin_output(struct tty *t, char ch) {
 			mutex_lock(&t->lock);
 		}
 
-		idesc_wait_cleanup(t->idesc, &iwl);
+		waitq_wait_cleanup(&t->tty_waitq, &wql);
 	} while (!ret);
 
 	return ret;
 }
 
-size_t tty_write(struct tty *t, const char *buff, size_t size) {
+size_t tty_write(struct tty *t, const char *buff, size_t size, int flags) {
 	size_t count;
 	int ret = 0;
 
@@ -179,7 +174,7 @@ size_t tty_write(struct tty *t, const char *buff, size_t size) {
 	mutex_lock(&t->lock);
 
 	for (count = size; count > 0; count--, buff++) {
-		if ((ret = tty_blockin_output(t, *buff))) {
+		if ((ret = tty_blockin_output(t, *buff, flags))) {
 			break;
 		}
 	}
@@ -273,12 +268,12 @@ size_t tty_status(struct tty *t, int status_nr) {
 struct tty *tty_init(struct tty *t, const struct tty_ops *ops) {
 	assert(t && ops);
 
-	t->idesc = NULL;
 	t->ops = ops;
 
 	termios_init(&t->termios);
 
 	mutex_init(&t->lock);
+	waitq_init(&t->tty_waitq);
 
 	ring_init(&t->rx_ring);
 	ring_init(&t->i_ring);

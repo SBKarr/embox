@@ -9,8 +9,11 @@
 #ifndef IDESC_EVENT_H_
 #define IDESC_EVENT_H_
 
-#include <kernel/sched/waitq.h>
 #include <poll.h> /* for flags */
+#include <sys/types.h>
+
+#include <kernel/sched/waitq.h>
+#include <kernel/thread/thread_sched_wait.h>
 
 struct idesc;
 
@@ -34,7 +37,6 @@ static inline void idesc_wait_init(struct idesc_wait_link *iwl, int mask) {
  *
  * @param idesc Idesc to wait event on
  * @param wl Idesc_wait_link to prepare
- * @param mask Mask of events
  *
  * @return 0 on success
  * @return -EAGAIN if descriptor has O_NONBLOCK set
@@ -80,23 +82,22 @@ extern int idesc_notify(struct idesc *idesc, int mask);
  * @return Negating on error
  */
 #define IDESC_WAIT_LOCKED(_unlock_expr, _idesc, _iwl, _mask, _timeout, _lock_expr) \
-	({                                                   \
-	 	int __res;                                       \
-		idesc_wait_init(_iwl, _mask);                    \
-                                                         \
-		threadsig_lock();                                \
-		__res = idesc_wait_prepare(_idesc, _iwl);        \
-                                                         \
-		if (!__res) {                                    \
-			_unlock_expr;                                \
-			__res = sched_wait_timeout(_timeout, NULL);  \
-			_lock_expr;                                  \
-		}                                                \
-                                                         \
-		idesc_wait_cleanup(_idesc, _iwl);                \
-		threadsig_unlock();                              \
-	 	__res;                                           \
+	({                                                                             \
+		int __res;                                                                 \
+		idesc_wait_init(_iwl, _mask);                                              \
+                                                                                   \
+		threadsig_lock();                                                          \
+		__res = idesc_wait_prepare(_idesc, _iwl);                                  \
+                                                                                   \
+		if (!__res) {                                                              \
+			_unlock_expr;                                                          \
+			__res = sched_wait_timeout(_timeout, NULL);                            \
+			_lock_expr;                                                            \
+		}                                                                          \
+                                                                                   \
+		idesc_wait_cleanup(_idesc, _iwl);                                          \
+		threadsig_unlock();                                                        \
+		__res;                                                                     \
 	})
-
 
 #endif /* IDESC_EVENT_H_ */

@@ -15,8 +15,9 @@
 #include <drivers/tty.h>
 
 struct pty {
-	struct tty tty; /* slave side */
+	struct tty tty;
 	struct idesc *master;
+	struct idesc *slave;
 };
 
 #define pty_from_tty(t) member_cast_out(t, struct pty, tty)

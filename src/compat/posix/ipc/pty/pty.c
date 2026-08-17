@@ -70,7 +70,7 @@ size_t pty_read(struct pty *pt, struct idesc *idesc, char *buff, size_t size) {
 				break;
 			}
 
-			if (!t->idesc) {
+			if (!pt->slave) {
 				break;
 			}
 
@@ -98,21 +98,17 @@ const struct tty_ops pty_ops = {
 
 struct pty *pty_init(struct pty *p, struct idesc *master, struct idesc *slave) {
 	tty_init(pty_to_tty(p), &pty_ops);
-	p->tty.idesc = slave;
 	p->master = master;
+	p->slave = slave;
 
 	return p;
 }
 static void pty_close(struct idesc *idesc);
 static int pty_ioctl(struct idesc *idesc, int request, void *data);
-static int pty_slave_write(struct idesc *desc, const struct iovec *iov,
-    int cnt);
-static int pty_slave_read(struct idesc *idesc, const struct iovec *iov,
-    int cnt);
-static int pty_master_write(struct idesc *desc, const struct iovec *iov,
-    int cnt);
-static int pty_master_read(struct idesc *idesc, const struct iovec *iov,
-    int cnt);
+static int pty_slave_write(struct idesc *desc, const struct iovec *iov, int cnt);
+static int pty_slave_read(struct idesc *idesc, const struct iovec *iov, int cnt);
+static int pty_master_write(struct idesc *desc, const struct iovec *iov, int cnt);
+static int pty_master_read(struct idesc *idesc, const struct iovec *iov, int cnt);
 static int pty_fstat(struct idesc *data, struct stat *stat);
 static int pty_master_status(struct idesc *idesc, int mask);
 static int pty_slave_status(struct idesc *idesc, int mask);
@@ -179,7 +175,7 @@ static void pty_close(struct idesc *idesc) {
 	struct pty *pty;
 
 	ipty_pm = &ipty->pty->master;
-	ipty_ps = &ipty->pty->tty.idesc;
+	ipty_ps = &ipty->pty->slave;
 
 	pty = ipty->pty;
 
@@ -206,10 +202,10 @@ static void pty_close(struct idesc *idesc) {
 	sched_unlock();
 }
 
-static ssize_t pty_master_write(struct idesc *desc, const struct iovec *iov,
+static ssize_t pty_master_write(struct idesc *idesc, const struct iovec *iov,
     int cnt) {
 	size_t nbyte;
-	struct idesc_pty *ipty = (struct idesc_pty *)desc;
+	struct idesc_pty *ipty = (struct idesc_pty *)idesc;
 
 	assert(ipty);
 	assert(iov);
@@ -220,19 +216,19 @@ static ssize_t pty_master_write(struct idesc *desc, const struct iovec *iov,
 	return pty_write(ipty->pty, iov->iov_base, nbyte);
 }
 
-static ssize_t pty_master_read(struct idesc *desc, const struct iovec *iov,
+static ssize_t pty_master_read(struct idesc *idesc, const struct iovec *iov,
     int cnt) {
-	struct idesc_pty *ipty = (struct idesc_pty *)desc;
+	struct idesc_pty *ipty = (struct idesc_pty *)idesc;
 	assert(ipty);
 	assert(iov);
 	assert(cnt == 1);
-	return pty_read(ipty->pty, desc, iov->iov_base, iov->iov_len);
+	return pty_read(ipty->pty, idesc, iov->iov_base, iov->iov_len);
 }
 
-static ssize_t pty_slave_write(struct idesc *desc, const struct iovec *iov,
+static ssize_t pty_slave_write(struct idesc *idesc, const struct iovec *iov,
     int cnt) {
 	size_t nbyte;
-	struct idesc_pty *ipty = (struct idesc_pty *)desc;
+	struct idesc_pty *ipty = (struct idesc_pty *)idesc;
 
 	assert(ipty);
 	assert(iov);
@@ -240,19 +236,21 @@ static ssize_t pty_slave_write(struct idesc *desc, const struct iovec *iov,
 	assert(cnt == 1);
 
 	nbyte = iov->iov_len;
-	return tty_write(pty_to_tty(ipty->pty), iov->iov_base, nbyte);
+	return tty_write(pty_to_tty(ipty->pty), iov->iov_base, nbyte,
+	    idesc->idesc_flags);
 }
 
-static ssize_t pty_slave_read(struct idesc *desc, const struct iovec *iov,
+static ssize_t pty_slave_read(struct idesc *idesc, const struct iovec *iov,
     int cnt) {
-	struct idesc_pty *ipty = (struct idesc_pty *)desc;
+	struct idesc_pty *ipty = (struct idesc_pty *)idesc;
 	assert(ipty != NULL);
 	assert(iov);
 	assert(cnt == 1);
-	return tty_read(pty_to_tty(ipty->pty), iov->iov_base, iov->iov_len);
+	return tty_read(pty_to_tty(ipty->pty), iov->iov_base, iov->iov_len,
+	    idesc->idesc_flags);
 }
 
-static int pty_fstat(struct idesc *data, struct stat *stat) {
+static int pty_fstat(struct idesc *idesc, struct stat *stat) {
 	stat->st_mode = S_IFCHR;
 
 	return 0;
@@ -273,7 +271,7 @@ static int pty_master_status(struct idesc *idesc, int mask) {
 
 	/* if slave is closed read/write/err will not block and will
  	 * cause error */
-	if (!ipty->pty->tty.idesc) {
+	if (!ipty->pty->slave) {
 		return 1;
 	}
 
@@ -335,6 +333,8 @@ int ppty(int ptyfds[2]) {
 		goto out_err;
 	}
 
+	idesc_set_dev_waitq(&slave->idesc, &pty->tty.tty_waitq);
+
 	pty_init(pty, &master->idesc, &slave->idesc);
 
 	ptyfds[0] = idesc_table_add(it, &master->idesc, 0);
@@ -363,7 +363,7 @@ out_err:
 		idesc_pty_delete(master, &pty->master);
 	}
 	if (slave) {
-		idesc_pty_delete(slave, &pty->tty.idesc);
+		idesc_pty_delete(slave, &pty->slave);
 	}
 	if (pty) {
 		pty_delete(pty);
